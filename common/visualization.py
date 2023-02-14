@@ -13,6 +13,8 @@ def plot_norm_dist_ellipse(ax, means, cov_list, color):
     for index, cov in enumerate(cov_list):
         val, vec = np.linalg.eig(cov)
         phi = -np.arccos(vec[0, 0])
+        #phi = np.arctan2(vec[0, 1],vec[0, 0])
+
 
         th = np.linspace(0, 2 * np.pi, 100)
         x = val[0] * np.cos(th)
