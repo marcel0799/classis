@@ -3,7 +3,6 @@ import scipy
 from scipy.spatial.distance import cdist
 from matplotlib import cm
 import matplotlib.pyplot as plt
-from common.visualization import plot_norm_dist_ellipse as plot_dists
 
 class Lloyd(object):
 
@@ -14,9 +13,7 @@ class Lloyd(object):
 
         for i in range(len(codewords)):
             data = samples[classOfTrainData==i]
-            ax.scatter(data[:, 0], data[:, 1], c=colormap[i], edgecolor='k')
-        
-        plot_dists(ax, codewords, covs, colormap)       
+            ax.scatter(data[:, 0], data[:, 1], c=colormap[i], edgecolor='k')   
 
         
 #        ax.scatter(samples[:, 0], samples[:, 1], cmap="plasma", edgecolor='k')
