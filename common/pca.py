@@ -8,12 +8,18 @@ class PCA(object):
     """Einfaches 3D Beispiel fuer die Hauptkomponentenanalyse."""
 
     def __init__(self, samples):
-        # placeholder
-        self.train_mean = None
-        self.eig_vals = None
-        self.eig_vecs = None
+        self.train_mean = np.mean(samples,axis=0)
+        samples0 = samples - self.train_mean
+        total_scatter = np.dot(np.transpose(samples0),samples0)
+        total_scatter = total_scatter / len(samples)
+        (self.eig_vals, self.eig_vecs) = np.linalg.eig(total_scatter)
+        sort_indexes = self.eig_vals.argsort()
+        sort_indexes = np.flip(sort_indexes)
+        self.eig_vals = self.eig_vals[sort_indexes]
+        self.eig_vecs = self.eig_vecs[sort_indexes]
+        #print(self.eig_vals)
         
-        raise NotImplementedError()
+        
 
 
     def transform_samples(self, samples, target_dim):
@@ -21,9 +27,29 @@ class PCA(object):
             raise ValueError('Samples dimension does not match vector space transformation matrix')
         if target_dim < 1 or target_dim > samples.shape[1]:
             raise ValueError('Invalid target dimension')
+        #---------------------------------------------
+        transf_matrix = self.eig_vecs[:target_dim]
+        self.target_dim = target_dim
+        transposedSamples = np.transpose(samples-self.train_mean)
+        
+        samples_2d = np.dot(transf_matrix,transposedSamples)
+        samples_2d = samples_2d.T
+        #----------------------------------------------
+        rest_eigenVal = np.sum(self.eig_vals[target_dim:])
+        gesamt_eigenVal = np.sum(self.eig_vals)
+        #print(f" sum rest eigen val: {rest_eigenVal}")
+        #print(f" sum eigen val: {gesamt_eigenVal}")
+        #print(f" relativer verlust varianz: {rest_eigenVal / gesamt_eigenVal}")
+        return (samples_2d, rest_eigenVal/gesamt_eigenVal)
+        
+    def retransform_samples(self,lowersamples):
+        print(lowersamples.shape)
+        print(self.eig_vecs[:self.target_dim].shape)
+        
+        return np.real(np.dot(lowersamples, self.eig_vecs[:self.target_dim]) + self.train_mean)
+        
 
-        raise NotImplementedError()
-
+        
 
 
     def plot_subspace(self, limits, color, linewidth, alpha, ellipsoid=True, coord_system=True, target_dim=None):
