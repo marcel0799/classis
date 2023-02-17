@@ -344,14 +344,34 @@ class NeuralNetwork(object):
         # Speichern Sie den Root-Mean-Squared Error und die Gewichte fuer jede Trainingsiteration
         self.__nn_rms_list = []
         self.__nn_weights_list = []
+        self.currentWeights = np.array([2,4,6])
 
+        def schwellwertFunc(x):
+            if(x<=0): 
+                return 0
+            else: 
+                return 1
+        
         # Initialisieren Sie die Aktivierungsfunktionen und deren Ableitungen mithilfe des lambda Operators
         # https://docs.python.org/3/tutorial/controlflow.html#lambda-expressions
-        # if activation == 'Linear':
-        #    self.__activation = lambda x: ...
-        #    self.__activation_deriv = lambda x: ...
-        raise NotImplementedError()
-
+        if activation == 'Linear':
+            self.__activation = lambda x: x
+            self.__activation_deriv = lambda x: 1
+        elif activation == 'TanH':
+            self.__activation = lambda x: np.tanh(x)
+            self.__activation_deriv = lambda x: scipy.misc.derivative(np.tanh(x),x)
+        elif activation == 'Sigmoid':
+            self.__activation = lambda x: (1 / 1 + (np.exp(x)))
+            self.__activation_deriv = lambda x: scipy.misc.derivative((1 / 1 + (np.exp(x))),x)
+        elif activation == 'ReLu':
+            self.__activation = lambda x: np.max(0,x)
+            self.__activation_deriv = lambda x: schwellwertFunc(x)
+        elif activation == 'Schwellwert':
+            self.__activation = lambda x: schwellwertFunc(x)
+            self.__activation_deriv = lambda x: 0
+        
+    
+        
 
     def estimate(self, train_samples, train_labels):
         """Trainiert das neuronale Netzwerk mit den gegebenen Trainingsdaten.
@@ -364,9 +384,83 @@ class NeuralNetwork(object):
             train_labels: ndarray (1-dimensional), Klassenlabels
                 (d components, train_labels.shape=(d,) ).
         """
-        raise NotImplementedError()
+        korrekturWerteGewicht0 = []
+        korrekturWerteGewicht1 = []
+        korrekturWerteGewicht2 = []
+        
+
+        def mapLabels(x):
+            if(x == '0'):
+                return 0
+            else:
+                return 1
+
+        train_labels_casted = [mapLabels(x) for x in train_labels]
+
+        #trainings iterationen
+        for iteration in range(self.__iterations):
+            print(f"Iteration: {iteration}")  
+            calced_labels = []
+            squaredErrors = []
+            all_errors = []
+            #fuer jeden datenpunkt ein label berechnen
+            for s in range(len(train_samples)):
+                eingabe = np.ones(3,dtype=float)
+                eingabe[1] = train_samples[s][0]
+                eingabe[2] = train_samples[s][1]
+                y = np.dot(eingabe.T, self.currentWeights.T)
+                f = self.activation(y)
+                calced_labels.append(f)
+                fehler = train_labels_casted[s]-f
+                all_errors.append(fehler)
+                squaredError = fehler*fehler
+                squaredErrors.append(squaredError)
+
+                korrekturWertGewicht0 = fehler*self.activation_deriv(y)*eingabe[0]
+                korrekturWerteGewicht0.append(korrekturWertGewicht0)
+                korrekturWertGewicht1 = fehler*self.activation_deriv(y)*eingabe[1]
+                korrekturWerteGewicht1.append(korrekturWertGewicht1)
+                korrekturWertGewicht2 = fehler*self.activation_deriv(y)*eingabe[2]
+                korrekturWerteGewicht2.append(korrekturWertGewicht2)
+
+            #berechnen des fehlers
+            meanSquaredError = np.mean(np.array(squaredErrors))
+            self.__nn_rms_list.append(meanSquaredError)
+            self.__nn_weights_list.append(self.currentWeights)
+            print(f"mean squared error: {meanSquaredError}")
+
+            #anpassen der gewichte
+            #berechnen der mean korrekturwerte fuer batch anpassung
+            meanKorrekturWertGewicht0 = np.mean(np.array(korrekturWerteGewicht0))
+            meanKorrekturWertGewicht1 = np.mean(np.array(korrekturWerteGewicht1))
+            meanKorrekturWertGewicht2 = np.mean(np.array(korrekturWerteGewicht2))
+
+            self.currentWeights[0] = self.currentWeights[0] -  ( self.__learning_rate * meanKorrekturWertGewicht0 )
+            self.currentWeights[1] = self.currentWeights[1] -  ( self.__learning_rate * meanKorrekturWertGewicht1 )
+            self.currentWeights[2] = self.currentWeights[2] -  ( self.__learning_rate * meanKorrekturWertGewicht2 )
+              
+            
+            
+            """
+            def getInput(s,x):
+                if x == 0:
+                    return 1
+                else:
+                    return train_samples[s][x-1]   
 
 
+            #trainieren der gewichte
+            for s in range(len(train_samples)):
+                for i in range(len(self.currentWeights)):
+                    print(self.activation_deriv(train_samples[s][i-1]))
+                    print(getInput(s,i))
+                    print(all_errors[s])
+                    print(self.__learning_rate)
+                    print(self.currentWeights[i])
+                    self.currentWeights[i] = self.currentWeights[i] - self.__learning_rate * all_errors[s] * getInput(s,i) #* self.activation_deriv(train_samples[s])
+            """
+
+            print(self.currentWeights)
 
     def classify(self, test_samples, iteration=None):
         """Klassifiziert die Testdaten
